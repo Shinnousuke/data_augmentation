@@ -110,18 +110,26 @@ def augment_image_640(original_img: Image.Image):
     return augmented_images
 
 # ------------------ Streamlit Logic ------------------ #
+# ------------------ Streamlit Logic ------------------ #
 if uploaded_files:
     if st.button("🚀 Generate 640 Augmented Images per Image", key="generate_btn"):
         with st.spinner("Applying filters and displaying results... Please wait..."):
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+
+                first_file = True  # Flag to display only the first file
+
                 for file in uploaded_files:
                     img = Image.open(file)
                     augmented = augment_image_640(img)
                     base_name = os.path.splitext(file.name)[0]
 
-                    st.subheader(f"80 Filtered Images for **{file.name}** (only first image of each filter shown)")
-                    cols = st.columns(8)  # Display in grid, 8 per row
+                    # Display only for the first uploaded file
+                    if first_file:
+                        st.subheader(
+                            f"80 Filtered Images for **{file.name}** (only first image of each filter shown)"
+                        )
+                        cols = st.columns(8)  # grid layout
 
                     display_idx = 0
                     for filename, aug_img in augmented:
@@ -131,15 +139,25 @@ if uploaded_files:
                         aug_img.save(img_bytes, format="PNG")
                         zip_file.writestr(foldered_name, img_bytes.getvalue())
 
-                        # Display only images with rotation=0 and without flip
-                        if "_rot0.png" in filename:  # Show only original orientation
+                        # Show preview only for first file and rotation=0 images
+                        if first_file and "_rot0.png" in filename:
                             with cols[display_idx % 8]:
-                                st.image(aug_img, caption=filename.split(".")[0], use_container_width=True)
+                                st.image(
+                                    aug_img,
+                                    caption=filename.split(".")[0],
+                                    use_container_width=True,
+                                )
                             display_idx += 1
+
+                    if first_file:
+                        st.caption("(Rest pictures will be in similar pattern.)")
+                        first_file = False  # Skip displaying for next files
 
             zip_buffer.seek(0)
             st.success("✅ Augmentation complete! 80 images shown above. Full 640 images available in ZIP.")
-            st.download_button("📦 Download All 640 Augmented Images",
-                               zip_buffer,
-                               "augmented_images_all.zip",
-                               "application/zip")
+            st.download_button(
+                "📦 Download All 640 Augmented Images",
+                zip_buffer,
+                "augmented_images_all.zip",
+                "application/zip"
+            )
