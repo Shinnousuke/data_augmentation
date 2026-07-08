@@ -98,7 +98,13 @@ def augment_image_640(original_img: Image.Image):
     filters = get_80_filters()
 
     for i, filter_func in enumerate(filters):
-        filtered_img = filter_func(original_img)
+        try:
+    filtered_img = filter_func(original_img.copy())
+except Exception as e:
+    st.error(f"Filter {i+1} failed")
+    st.write("Image mode:", original_img.mode)
+    st.write(e)
+    st.stop()
 
         for angle in [0, 90, 180, 270]:
             rotated = filtered_img.rotate(angle, expand=True)
@@ -120,7 +126,7 @@ if uploaded_files:
                 first_file = True  # Flag to display only the first file
 
                 for file in uploaded_files:
-                    img = Image.open(file)
+                    img = Image.open(file).convert("RGB")
                     augmented = augment_image_640(img)
                     base_name = os.path.splitext(file.name)[0]
 
